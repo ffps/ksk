@@ -1,8 +1,14 @@
 package com.ffps.ksk;
 
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.preference.Preference;
 import android.preference.PreferenceActivity;
+import android.provider.Settings;
 import android.view.WindowManager;
 import android.widget.Toast;
 
@@ -24,6 +30,12 @@ public class SettingsActivity extends PreferenceActivity
                 (p, v) -> check(inRange(str(v), 0, 9999), R.string.toast_bad_number));
         findPreference(Prefs.RETRY_PAUSE).setOnPreferenceChangeListener(
                 (p, v) -> check(inRange(str(v), 1, 86400), R.string.toast_bad_number));
+        findPreference(Prefs.LAUNCH_DELAY).setOnPreferenceChangeListener(
+                (p, v) -> check(inRange(str(v), 0, 600), R.string.toast_bad_number));
+        findPreference(Prefs.OVERLAY).setOnPreferenceClickListener(p -> {
+            openOverlaySettings();
+            return true;
+        });
     }
 
     @Override
@@ -57,6 +69,27 @@ public class SettingsActivity extends PreferenceActivity
         String sch = sp.getString(Prefs.SCHEDULE, Prefs.DEF_SCHEDULE).trim();
         findPreference(Prefs.SCHEDULE).setSummary(sch.length() == 0 ? getString(R.string.schedule_off) : sch);
         findPreference(Prefs.AUTOSTART).setSummary(bootSummary(sp.getString(Prefs.LAST_BOOT, "")));
+        findPreference(Prefs.LAUNCH_DELAY).setSummary(
+                sp.getString(Prefs.LAUNCH_DELAY, String.valueOf(Prefs.DEF_LAUNCH_DELAY)));
+        Preference overlay = findPreference(Prefs.OVERLAY);
+        if (Build.VERSION.SDK_INT < 29) {
+            overlay.setEnabled(false);
+            overlay.setSummary(R.string.overlay_na);
+        } else {
+            overlay.setSummary(Settings.canDrawOverlays(this) ? R.string.overlay_on : R.string.overlay_off);
+        }
+    }
+
+    private void openOverlaySettings() {
+        if (Build.VERSION.SDK_INT < 23) {
+            return;
+        }
+        try {
+            startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + getPackageName())));
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(this, R.string.overlay_open_failed, Toast.LENGTH_LONG).show();
+        }
     }
 
     private String bootSummary(String raw) {

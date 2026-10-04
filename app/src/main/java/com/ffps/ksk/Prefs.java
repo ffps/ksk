@@ -10,10 +10,14 @@ final class Prefs {
     static final String AUTOSTART = "autostart";
     static final String IGNORE_SSL = "ignore_ssl";
     static final String LAST_BOOT = "last_boot_signal";
+    static final String LAUNCH_DELAY = "launch_delay";
+    static final String PULL_REFRESH = "pull_refresh";
+    static final String OVERLAY = "overlay";
 
     static final String DEF_SCHEDULE = "59 * * * *";
     static final int DEF_RETRY_COUNT = 0;
     static final int DEF_RETRY_PAUSE = 10;
+    static final int DEF_LAUNCH_DELAY = 10;
 
     private Prefs() {
     }

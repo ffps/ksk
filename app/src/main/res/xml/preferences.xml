@@ -29,8 +29,25 @@
 
     <CheckBoxPreference
         android:defaultValue="true"
+        android:key="pull_refresh"
+        android:summary="@string/pref_pull_summary"
+        android:title="@string/pref_pull_title" />
+
+    <CheckBoxPreference
+        android:defaultValue="true"
         android:key="autostart"
         android:title="@string/pref_autostart_title" />
+
+    <EditTextPreference
+        android:defaultValue="10"
+        android:dialogMessage="@string/pref_launch_delay_dialog"
+        android:inputType="number"
+        android:key="launch_delay"
+        android:title="@string/pref_launch_delay_title" />
+
+    <Preference
+        android:key="overlay"
+        android:title="@string/pref_overlay_title" />
 
     <CheckBoxPreference
         android:defaultValue="false"

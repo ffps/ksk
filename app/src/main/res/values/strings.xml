@@ -16,6 +16,25 @@
     <string name="boot_never">Сигнал загрузки от системы ещё не приходил</string>
     <string name="boot_last">Последний сигнал загрузки: %1$s (%2$s), результат: %3$s</string>
 
+    <string name="pref_launch_delay_title">Задержка запуска, сек</string>
+    <string name="pref_launch_delay_dialog">Через сколько секунд после загрузки системы открывать приложение. Помогает, если другое приложение запускается следом и перекрывает киоск. 0 — сразу.</string>
+    <string name="pref_overlay_title">Разрешение «Поверх других окон»</string>
+    <string name="overlay_on">Разрешено</string>
+    <string name="overlay_off">Не разрешено. Нажмите, чтобы открыть настройку. Без неё на Android 10 и новее система блокирует автозапуск при загрузке.</string>
+    <string name="overlay_na">Не требуется на этой версии Android</string>
+    <string name="overlay_open_failed">Не удалось открыть настройку. Найдите её в настройках Android: Приложения → Особые права доступа → Поверх других окон</string>
+    <string name="overlay_state_yes">да</string>
+    <string name="overlay_state_no">нет</string>
+    <string name="overlay_state_na">не требуется</string>
+    <string name="boot_res_off">автозапуск выключен</string>
+    <string name="boot_res_wait">запуск через %1$d с</string>
+    <string name="boot_res_started">запуск вызван, поверх других окон: %1$s</string>
+    <string name="boot_res_error">ошибка запуска: %1$s</string>
+
+    <string name="pref_pull_title">Обновление свайпом вниз</string>
+    <string name="pref_pull_summary">Потяните страницу вниз, когда она в самом верху</string>
+    <string name="pull_release">Отпустите, чтобы обновить</string>
+
     <string name="not_set">не задано</string>
     <string name="schedule_off">выключено</string>
     <string name="retry_unlimited">0 — без ограничений</string>

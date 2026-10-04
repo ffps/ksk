@@ -10,7 +10,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
+import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -19,6 +21,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 
 public class MainActivity extends Activity {
     private static final long TICK_MS = 10000;
@@ -34,6 +37,13 @@ public class MainActivity extends Activity {
     private int maxRetries = Prefs.DEF_RETRY_COUNT;
     private int retryPause = Prefs.DEF_RETRY_PAUSE;
     private boolean ignoreSsl;
+    private boolean pullRefresh = true;
+
+    // обновление свайпом вниз
+    private TextView pullHint;
+    private float pullThreshold;
+    private float pullStartY;
+    private boolean pullTracking;
 
     // состояние загрузки
     private boolean started;
@@ -91,6 +101,21 @@ public class MainActivity extends Activity {
         root.addView(web, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
+        float density = getResources().getDisplayMetrics().density;
+        pullThreshold = 100 * density;
+        pullHint = new TextView(this);
+        pullHint.setText(R.string.pull_release);
+        pullHint.setTextColor(Color.WHITE);
+        pullHint.setBackgroundColor(0xCC4A148C);
+        int pad = (int) (12 * density);
+        pullHint.setPadding(pad * 2, pad, pad * 2, pad);
+        pullHint.setVisibility(View.GONE);
+        FrameLayout.LayoutParams hintLp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+        hintLp.topMargin = (int) (24 * density);
+        root.addView(pullHint, hintLp);
+
         setContentView(root);
 
         root.setOnSystemUiVisibilityChangeListener(visibility -> {
@@ -117,6 +142,43 @@ public class MainActivity extends Activity {
             return true;
         });
         web.setHapticFeedbackEnabled(false);
+
+        // обновление свайпом вниз, когда страница прокручена к самому верху
+        web.setOnTouchListener((v, e) -> {
+            if (!pullRefresh) {
+                return false;
+            }
+            switch (e.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    pullTracking = web.getScrollY() == 0;
+                    pullStartY = e.getY();
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    if (pullTracking) {
+                        if (e.getPointerCount() > 1 || web.getScrollY() > 0) {
+                            pullTracking = false;
+                            setPullHint(false);
+                        } else {
+                            setPullHint(e.getY() - pullStartY > pullThreshold);
+                        }
+                    }
+                    break;
+                case MotionEvent.ACTION_UP:
+                    if (pullTracking && web.getScrollY() == 0 && e.getY() - pullStartY > pullThreshold) {
+                        reloadNow();
+                    }
+                    pullTracking = false;
+                    setPullHint(false);
+                    break;
+                case MotionEvent.ACTION_CANCEL:
+                    pullTracking = false;
+                    setPullHint(false);
+                    break;
+                default:
+                    break;
+            }
+            return false;
+        });
 
         web.setWebViewClient(new WebViewClient() {
             @Override
@@ -215,6 +277,7 @@ public class MainActivity extends Activity {
         maxRetries = Math.max(0, Prefs.getInt(prefs, Prefs.RETRY_COUNT, Prefs.DEF_RETRY_COUNT));
         retryPause = Math.max(1, Prefs.getInt(prefs, Prefs.RETRY_PAUSE, Prefs.DEF_RETRY_PAUSE));
         ignoreSsl = prefs.getBoolean(Prefs.IGNORE_SSL, false);
+        pullRefresh = prefs.getBoolean(Prefs.PULL_REFRESH, true);
     }
 
     private void reloadNow() {
@@ -257,6 +320,10 @@ public class MainActivity extends Activity {
                 + "<h2>" + TextUtils.htmlEncode(title) + "</h2>"
                 + "<p>" + TextUtils.htmlEncode(text).replace("\n", "<br>") + "</p></body></html>";
         web.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
+    }
+
+    private void setPullHint(boolean show) {
+        pullHint.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
     private void openSettings() {
