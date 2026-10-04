@@ -8,10 +8,8 @@ import android.net.http.SslError;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -49,10 +47,6 @@ public class MainActivity extends Activity {
     // расписание
     private long nextReload = -1;
     private long lastTick;
-
-    // скрытый вход в настройки
-    private int cornerTaps;
-    private long cornerFirstTap;
 
     private final Runnable retryRunnable = () -> {
         retryPending = false;
@@ -97,12 +91,6 @@ public class MainActivity extends Activity {
         root.addView(web, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-        // невидимая зона в левом верхнем углу: 5 нажатий подряд открывают настройки
-        View corner = new View(this);
-        int size = (int) (56 * getResources().getDisplayMetrics().density);
-        root.addView(corner, new FrameLayout.LayoutParams(size, size, Gravity.TOP | Gravity.LEFT));
-        corner.setOnClickListener(v -> onCornerTap());
-
         setContentView(root);
 
         root.setOnSystemUiVisibilityChangeListener(visibility -> {
@@ -123,8 +111,11 @@ public class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= 21) {
             s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         }
-        web.setLongClickable(false);
-        web.setOnLongClickListener(v -> true);
+        // долгое нажатие на экран открывает настройки
+        web.setOnLongClickListener(v -> {
+            openSettings();
+            return true;
+        });
         web.setHapticFeedbackEnabled(false);
 
         web.setWebViewClient(new WebViewClient() {
@@ -263,18 +254,6 @@ public class MainActivity extends Activity {
                 + "<h2>" + TextUtils.htmlEncode(title) + "</h2>"
                 + "<p>" + TextUtils.htmlEncode(text).replace("\n", "<br>") + "</p></body></html>";
         web.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
-    }
-
-    private void onCornerTap() {
-        long now = SystemClock.uptimeMillis();
-        if (cornerTaps == 0 || now - cornerFirstTap > 4000) {
-            cornerTaps = 0;
-            cornerFirstTap = now;
-        }
-        if (++cornerTaps >= 5) {
-            cornerTaps = 0;
-            openSettings();
-        }
     }
 
     private void openSettings() {

@@ -20,7 +20,7 @@
     <string name="err_retry">Попытка %1$d из %2$s, повтор через %3$d с</string>
     <string name="err_giveup">Не удалось загрузить страницу за %1$d попыток. Следующая попытка — по расписанию или при возврате в приложение.</string>
     <string name="err_no_url_title">Адрес не задан</string>
-    <string name="err_no_url">Нажмите 5 раз в левый верхний угол экрана или кнопку «Меню», чтобы открыть настройки.</string>
+    <string name="err_no_url">Долго нажмите на экран (удерживайте палец) или нажмите кнопку «Меню», чтобы открыть настройки.</string>
 
     <string name="toast_bad_schedule">Неверное выражение crontab</string>
     <string name="toast_bad_number">Недопустимое число</string>
