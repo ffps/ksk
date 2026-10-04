@@ -43,11 +43,15 @@ public class SettingsActivity extends PreferenceActivity
 
     private void refreshSummaries() {
         SharedPreferences sp = getPreferenceScreen().getSharedPreferences();
-        String url = sp.getString(Prefs.URL, "");
-        findPreference(Prefs.URL).setSummary(url.length() == 0 ? getString(R.string.not_set) : url);
-        findPreference(Prefs.RETRY_COUNT).setSummary(sp.getString(Prefs.RETRY_COUNT, "30"));
-        findPreference(Prefs.RETRY_PAUSE).setSummary(sp.getString(Prefs.RETRY_PAUSE, "10"));
-        String sch = sp.getString(Prefs.SCHEDULE, "").trim();
+        String url = sp.getString(Prefs.URL, "").trim();
+        boolean noUrl = url.length() == 0 || url.equals("http://") || url.equals("https://");
+        findPreference(Prefs.URL).setSummary(noUrl ? getString(R.string.not_set) : url);
+        String count = sp.getString(Prefs.RETRY_COUNT, String.valueOf(Prefs.DEF_RETRY_COUNT)).trim();
+        findPreference(Prefs.RETRY_COUNT).setSummary(
+                count.equals("0") ? getString(R.string.retry_unlimited) : count);
+        findPreference(Prefs.RETRY_PAUSE).setSummary(
+                sp.getString(Prefs.RETRY_PAUSE, String.valueOf(Prefs.DEF_RETRY_PAUSE)));
+        String sch = sp.getString(Prefs.SCHEDULE, Prefs.DEF_SCHEDULE).trim();
         findPreference(Prefs.SCHEDULE).setSummary(sch.length() == 0 ? getString(R.string.schedule_off) : sch);
     }
 

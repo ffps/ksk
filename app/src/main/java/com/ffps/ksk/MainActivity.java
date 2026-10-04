@@ -30,9 +30,9 @@ public class MainActivity extends Activity {
 
     // настройки
     private String url = "";
-    private String schedule = "";
-    private int maxRetries = 30;
-    private int retryPause = 10;
+    private String schedule = Prefs.DEF_SCHEDULE;
+    private int maxRetries = Prefs.DEF_RETRY_COUNT;
+    private int retryPause = Prefs.DEF_RETRY_PAUSE;
     private boolean ignoreSsl;
 
     // состояние загрузки
@@ -204,13 +204,16 @@ public class MainActivity extends Activity {
 
     private void readSettings() {
         String u = prefs.getString(Prefs.URL, "").trim();
+        if (u.equals("http://") || u.equals("https://")) {
+            u = "";
+        }
         if (u.length() > 0 && !u.contains("://")) {
             u = "http://" + u;
         }
         url = u;
-        schedule = prefs.getString(Prefs.SCHEDULE, "").trim();
-        maxRetries = Math.max(0, Prefs.getInt(prefs, Prefs.RETRY_COUNT, 30));
-        retryPause = Math.max(1, Prefs.getInt(prefs, Prefs.RETRY_PAUSE, 10));
+        schedule = prefs.getString(Prefs.SCHEDULE, Prefs.DEF_SCHEDULE).trim();
+        maxRetries = Math.max(0, Prefs.getInt(prefs, Prefs.RETRY_COUNT, Prefs.DEF_RETRY_COUNT));
+        retryPause = Math.max(1, Prefs.getInt(prefs, Prefs.RETRY_PAUSE, Prefs.DEF_RETRY_PAUSE));
         ignoreSsl = prefs.getBoolean(Prefs.IGNORE_SSL, false);
     }
 

@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <EditTextPreference
+    <com.ffps.ksk.UrlPreference
         android:defaultValue=""
         android:inputType="textUri"
         android:key="url"
         android:title="@string/pref_url_title" />
 
     <EditTextPreference
-        android:defaultValue="30"
+        android:defaultValue="0"
         android:dialogMessage="@string/pref_retry_count_dialog"
         android:inputType="number"
         android:key="retry_count"
@@ -21,7 +21,7 @@
         android:title="@string/pref_retry_pause_title" />
 
     <EditTextPreference
-        android:defaultValue=""
+        android:defaultValue="59 * * * *"
         android:dialogMessage="@string/pref_schedule_dialog"
         android:inputType="text"
         android:key="schedule"

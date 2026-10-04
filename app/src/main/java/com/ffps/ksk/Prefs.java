@@ -10,6 +10,10 @@ final class Prefs {
     static final String AUTOSTART = "autostart";
     static final String IGNORE_SSL = "ignore_ssl";
 
+    static final String DEF_SCHEDULE = "59 * * * *";
+    static final int DEF_RETRY_COUNT = 0;
+    static final int DEF_RETRY_PAUSE = 10;
+
     private Prefs() {
     }
 
