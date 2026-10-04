@@ -1,6 +1,6 @@
 <p align="center"><img src="https://github.com/ffps/ksk/blob/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png?raw=true" /></p>
 
-# ksk — киоск для старого планшета/телефона
+# ksk — киоск из старого планшета/телефона
 
 Полноэкранный браузер (WebView) для Android 4.2+, без root.
 
