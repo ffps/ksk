@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Киоск</string>
+    <string name="settings_title">Настройки киоска</string>
+
+    <string name="pref_url_title">Адрес страницы</string>
+    <string name="pref_retry_count_title">Число попыток при недоступности</string>
+    <string name="pref_retry_count_dialog">Сколько раз повторять загрузку, если страница недоступна. 0 — без ограничений.</string>
+    <string name="pref_retry_pause_title">Пауза между попытками, сек</string>
+    <string name="pref_schedule_title">Автоперезагрузка страницы</string>
+    <string name="pref_schedule_dialog">Выражение crontab из 5 полей (минута час день месяц день_недели), например */30 * * * * — каждые 30 минут. Можно просто число минут, например 15. Пусто — выключено.</string>
+    <string name="pref_autostart_title">Запускать при загрузке системы</string>
+    <string name="pref_ignore_ssl_title">Игнорировать ошибки SSL-сертификата</string>
+    <string name="pref_ignore_ssl_summary">Для самоподписанных сертификатов и старых устройств</string>
+
+    <string name="not_set">не задано</string>
+    <string name="schedule_off">выключено</string>
+
+    <string name="err_title">Страница недоступна</string>
+    <string name="err_retry">Попытка %1$d из %2$s, повтор через %3$d с</string>
+    <string name="err_giveup">Не удалось загрузить страницу за %1$d попыток. Следующая попытка — по расписанию или при возврате в приложение.</string>
+    <string name="err_no_url_title">Адрес не задан</string>
+    <string name="err_no_url">Нажмите 5 раз в левый верхний угол экрана или кнопку «Меню», чтобы открыть настройки.</string>
+
+    <string name="toast_bad_schedule">Неверное выражение crontab</string>
+    <string name="toast_bad_number">Недопустимое число</string>
+</resources>

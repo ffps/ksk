@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <EditTextPreference
+        android:defaultValue=""
+        android:inputType="textUri"
+        android:key="url"
+        android:title="@string/pref_url_title" />
+
+    <EditTextPreference
+        android:defaultValue="30"
+        android:dialogMessage="@string/pref_retry_count_dialog"
+        android:inputType="number"
+        android:key="retry_count"
+        android:title="@string/pref_retry_count_title" />
+
+    <EditTextPreference
+        android:defaultValue="10"
+        android:inputType="number"
+        android:key="retry_pause"
+        android:title="@string/pref_retry_pause_title" />
+
+    <EditTextPreference
+        android:defaultValue=""
+        android:dialogMessage="@string/pref_schedule_dialog"
+        android:inputType="text"
+        android:key="schedule"
+        android:title="@string/pref_schedule_title" />
+
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:key="autostart"
+        android:title="@string/pref_autostart_title" />
+
+    <CheckBoxPreference
+        android:defaultValue="false"
+        android:key="ignore_ssl"
+        android:summary="@string/pref_ignore_ssl_summary"
+        android:title="@string/pref_ignore_ssl_title" />
+</PreferenceScreen>
