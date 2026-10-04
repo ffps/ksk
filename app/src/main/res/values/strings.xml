@@ -13,6 +13,9 @@
     <string name="pref_ignore_ssl_title">Игнорировать ошибки SSL-сертификата</string>
     <string name="pref_ignore_ssl_summary">Для самоподписанных сертификатов и старых устройств</string>
 
+    <string name="boot_never">Сигнал загрузки от системы ещё не приходил</string>
+    <string name="boot_last">Последний сигнал загрузки: %1$s (%2$s), результат: %3$s</string>
+
     <string name="not_set">не задано</string>
     <string name="schedule_off">выключено</string>
     <string name="retry_unlimited">0 — без ограничений</string>

@@ -9,6 +9,7 @@ final class Prefs {
     static final String SCHEDULE = "schedule";
     static final String AUTOSTART = "autostart";
     static final String IGNORE_SSL = "ignore_ssl";
+    static final String LAST_BOOT = "last_boot_signal";
 
     static final String DEF_SCHEDULE = "59 * * * *";
     static final int DEF_RETRY_COUNT = 0;

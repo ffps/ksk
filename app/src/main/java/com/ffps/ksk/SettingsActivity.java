@@ -6,6 +6,9 @@ import android.preference.PreferenceActivity;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import java.text.DateFormat;
+import java.util.Date;
+
 public class SettingsActivity extends PreferenceActivity
         implements SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -53,6 +56,21 @@ public class SettingsActivity extends PreferenceActivity
                 sp.getString(Prefs.RETRY_PAUSE, String.valueOf(Prefs.DEF_RETRY_PAUSE)));
         String sch = sp.getString(Prefs.SCHEDULE, Prefs.DEF_SCHEDULE).trim();
         findPreference(Prefs.SCHEDULE).setSummary(sch.length() == 0 ? getString(R.string.schedule_off) : sch);
+        findPreference(Prefs.AUTOSTART).setSummary(bootSummary(sp.getString(Prefs.LAST_BOOT, "")));
+    }
+
+    private String bootSummary(String raw) {
+        String[] parts = raw.split("\\|", 3);
+        if (parts.length < 3) {
+            return getString(R.string.boot_never);
+        }
+        try {
+            String when = DateFormat.getDateTimeInstance().format(new Date(Long.parseLong(parts[0])));
+            String action = parts[1].substring(parts[1].lastIndexOf('.') + 1);
+            return getString(R.string.boot_last, when, action, parts[2]);
+        } catch (RuntimeException e) {
+            return getString(R.string.boot_never);
+        }
     }
 
     private static String str(Object v) {
