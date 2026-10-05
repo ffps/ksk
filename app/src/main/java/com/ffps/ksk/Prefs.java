@@ -13,6 +13,7 @@ final class Prefs {
     static final String LAUNCH_DELAY = "launch_delay";
     static final String PULL_REFRESH = "pull_refresh";
     static final String OVERLAY = "overlay";
+    static final String LAUNCH_APP = "launch_app";
 
     static final String DEF_SCHEDULE = "59 * * * *";
     static final int DEF_RETRY_COUNT = 0;

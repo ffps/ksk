@@ -33,6 +33,12 @@
         android:summary="@string/pref_pull_summary"
         android:title="@string/pref_pull_title" />
 
+    <ListPreference
+        android:defaultValue=""
+        android:dialogTitle="@string/pref_launch_app_title"
+        android:key="launch_app"
+        android:title="@string/pref_launch_app_title" />
+
     <CheckBoxPreference
         android:defaultValue="true"
         android:key="autostart"

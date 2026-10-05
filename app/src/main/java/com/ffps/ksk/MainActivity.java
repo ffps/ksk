@@ -21,7 +21,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
-import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends Activity {
     private static final long TICK_MS = 10000;
@@ -39,11 +39,17 @@ public class MainActivity extends Activity {
     private boolean ignoreSsl;
     private boolean pullRefresh = true;
 
-    // обновление свайпом вниз
-    private TextView pullHint;
-    private float pullThreshold;
-    private float pullStartY;
-    private boolean pullTracking;
+    private String launchApp = "";
+
+    // жесты
+    private GestureIcon reloadIcon;
+    private GestureIcon homeIcon;
+    private int iconSize;
+    private float swipeThreshold;
+    private float startX;
+    private float startY;
+    private boolean pullTracking; // свайп вниз -> обновить страницу
+    private boolean homeTracking; // свайп вверх в нижней половине -> другое приложение
 
     // состояние загрузки
     private boolean started;
@@ -102,19 +108,10 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         float density = getResources().getDisplayMetrics().density;
-        pullThreshold = 100 * density;
-        pullHint = new TextView(this);
-        pullHint.setText(R.string.pull_release);
-        pullHint.setTextColor(Color.WHITE);
-        pullHint.setBackgroundColor(0xCC4A148C);
-        int pad = (int) (12 * density);
-        pullHint.setPadding(pad * 2, pad, pad * 2, pad);
-        pullHint.setVisibility(View.GONE);
-        FrameLayout.LayoutParams hintLp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.TOP | Gravity.CENTER_HORIZONTAL);
-        hintLp.topMargin = (int) (24 * density);
-        root.addView(pullHint, hintLp);
+        swipeThreshold = 100 * density;
+        iconSize = (int) (72 * density);
+        reloadIcon = addGestureIcon(GestureIcon.RELOAD);
+        homeIcon = addGestureIcon(GestureIcon.HOME);
 
         setContentView(root);
 
@@ -143,42 +140,8 @@ public class MainActivity extends Activity {
         });
         web.setHapticFeedbackEnabled(false);
 
-        // обновление свайпом вниз, когда страница прокручена к самому верху
-        web.setOnTouchListener((v, e) -> {
-            if (!pullRefresh) {
-                return false;
-            }
-            switch (e.getActionMasked()) {
-                case MotionEvent.ACTION_DOWN:
-                    pullTracking = web.getScrollY() == 0;
-                    pullStartY = e.getY();
-                    break;
-                case MotionEvent.ACTION_MOVE:
-                    if (pullTracking) {
-                        if (e.getPointerCount() > 1 || web.getScrollY() > 0) {
-                            pullTracking = false;
-                            setPullHint(false);
-                        } else {
-                            setPullHint(e.getY() - pullStartY > pullThreshold);
-                        }
-                    }
-                    break;
-                case MotionEvent.ACTION_UP:
-                    if (pullTracking && web.getScrollY() == 0 && e.getY() - pullStartY > pullThreshold) {
-                        reloadNow();
-                    }
-                    pullTracking = false;
-                    setPullHint(false);
-                    break;
-                case MotionEvent.ACTION_CANCEL:
-                    pullTracking = false;
-                    setPullHint(false);
-                    break;
-                default:
-                    break;
-            }
-            return false;
-        });
+        // жесты: свайп вниз — обновить, свайп вверх в нижней половине — запустить другое приложение
+        web.setOnTouchListener((v, e) -> onWebTouch(e));
 
         web.setWebViewClient(new WebViewClient() {
             @Override
@@ -278,6 +241,7 @@ public class MainActivity extends Activity {
         retryPause = Math.max(1, Prefs.getInt(prefs, Prefs.RETRY_PAUSE, Prefs.DEF_RETRY_PAUSE));
         ignoreSsl = prefs.getBoolean(Prefs.IGNORE_SSL, false);
         pullRefresh = prefs.getBoolean(Prefs.PULL_REFRESH, true);
+        launchApp = prefs.getString(Prefs.LAUNCH_APP, "").trim();
     }
 
     private void reloadNow() {
@@ -322,8 +286,88 @@ public class MainActivity extends Activity {
         web.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
     }
 
-    private void setPullHint(boolean show) {
-        pullHint.setVisibility(show ? View.VISIBLE : View.GONE);
+    private GestureIcon addGestureIcon(int type) {
+        GestureIcon g = new GestureIcon(this, type);
+        g.setVisibility(View.GONE);
+        root.addView(g, new FrameLayout.LayoutParams(iconSize, iconSize, Gravity.TOP | Gravity.CENTER_HORIZONTAL));
+        return g;
+    }
+
+    /** Показать/скрыть пиктограмму; центр по вертикали — на заданной доле высоты экрана. */
+    private void showGestureIcon(GestureIcon g, float heightFraction, boolean show) {
+        if (show) {
+            g.setY(root.getHeight() * heightFraction - iconSize / 2f);
+        }
+        g.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    private void cancelGestures() {
+        pullTracking = false;
+        homeTracking = false;
+        reloadIcon.setVisibility(View.GONE);
+        homeIcon.setVisibility(View.GONE);
+    }
+
+    private boolean onWebTouch(MotionEvent e) {
+        switch (e.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                startX = e.getX();
+                startY = e.getY();
+                pullTracking = pullRefresh && web.getScrollY() == 0;
+                homeTracking = launchApp.length() > 0
+                        && startY > web.getHeight() / 2f
+                        && !web.canScrollVertically(1);
+                break;
+            case MotionEvent.ACTION_MOVE: {
+                if (e.getPointerCount() > 1) {
+                    cancelGestures();
+                    break;
+                }
+                float dy = e.getY() - startY;
+                boolean vertical = Math.abs(dy) > Math.abs(e.getX() - startX);
+                if (pullTracking) {
+                    showGestureIcon(reloadIcon, 0.25f, vertical && dy > swipeThreshold);
+                }
+                if (homeTracking) {
+                    showGestureIcon(homeIcon, 0.75f, vertical && -dy > swipeThreshold);
+                }
+                break;
+            }
+            case MotionEvent.ACTION_UP: {
+                float dy = e.getY() - startY;
+                boolean vertical = Math.abs(dy) > Math.abs(e.getX() - startX);
+                if (pullTracking && vertical && dy > swipeThreshold && web.getScrollY() == 0) {
+                    cancelGestures();
+                    reloadNow();
+                } else if (homeTracking && vertical && -dy > swipeThreshold) {
+                    cancelGestures();
+                    launchOtherApp();
+                } else {
+                    cancelGestures();
+                }
+                break;
+            }
+            case MotionEvent.ACTION_CANCEL:
+                cancelGestures();
+                break;
+            default:
+                break;
+        }
+        return false;
+    }
+
+    private void launchOtherApp() {
+        Intent i = getPackageManager().getLaunchIntentForPackage(launchApp);
+        if (i == null) {
+            Toast.makeText(this, R.string.app_not_found, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            startActivity(i);
+        } catch (Exception ex) {
+            Toast.makeText(this, R.string.app_not_found, Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void openSettings() {
