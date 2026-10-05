@@ -359,8 +359,10 @@ public class MainActivity extends Activity {
     private void launchOtherApp() {
         Intent i = getPackageManager().getLaunchIntentForPackage(launchApp);
         if (i == null) {
-            Toast.makeText(this, R.string.app_not_found, Toast.LENGTH_SHORT).show();
-            return;
+            // у лаунчера нет категории LAUNCHER: открываем его экран "домой" напрямую
+            i = new Intent(Intent.ACTION_MAIN);
+            i.addCategory(Intent.CATEGORY_HOME);
+            i.setPackage(launchApp);
         }
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {

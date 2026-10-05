@@ -95,16 +95,21 @@ public class SettingsActivity extends PreferenceActivity
 
     private void populateApps(ListPreference lp) {
         PackageManager pm = getPackageManager();
-        Intent main = new Intent(Intent.ACTION_MAIN);
-        main.addCategory(Intent.CATEGORY_LAUNCHER);
         List<String[]> apps = new ArrayList<>();
         Set<String> seen = new HashSet<>();
-        for (ResolveInfo ri : pm.queryIntentActivities(main, 0)) {
-            String pkg = ri.activityInfo.packageName;
-            if (pkg.equals(getPackageName()) || !seen.add(pkg)) {
-                continue;
+        // обычные приложения (LAUNCHER) и экраны "домой" (HOME): штатный лаунчер, например Launcher3,
+        // в списке приложений не значится, у него только категория HOME
+        String[] categories = {Intent.CATEGORY_LAUNCHER, Intent.CATEGORY_HOME};
+        for (String category : categories) {
+            Intent main = new Intent(Intent.ACTION_MAIN);
+            main.addCategory(category);
+            for (ResolveInfo ri : pm.queryIntentActivities(main, 0)) {
+                String pkg = ri.activityInfo.packageName;
+                if (pkg.equals(getPackageName()) || !seen.add(pkg)) {
+                    continue;
+                }
+                apps.add(new String[]{String.valueOf(ri.loadLabel(pm)), pkg});
             }
-            apps.add(new String[]{String.valueOf(ri.loadLabel(pm)), pkg});
         }
         Collections.sort(apps, (a, b) -> a[0].compareToIgnoreCase(b[0]));
         CharSequence[] entries = new CharSequence[apps.size() + 1];
