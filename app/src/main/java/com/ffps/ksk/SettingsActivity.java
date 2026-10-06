@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.ListPreference;
+import android.preference.MultiSelectListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.provider.Settings;
@@ -32,6 +33,7 @@ public class SettingsActivity extends PreferenceActivity
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         addPreferencesFromResource(R.xml.preferences);
         populateApps((ListPreference) findPreference(Prefs.LAUNCH_APP));
+        populateMulti((MultiSelectListPreference) findPreference(Prefs.AUTOSTART_APPS));
 
         findPreference(Prefs.SCHEDULE).setOnPreferenceChangeListener(
                 (p, v) -> check(Schedule.isValid(str(v)), R.string.toast_bad_schedule));
@@ -39,6 +41,8 @@ public class SettingsActivity extends PreferenceActivity
                 (p, v) -> check(inRange(str(v), 0, 9999), R.string.toast_bad_number));
         findPreference(Prefs.RETRY_PAUSE).setOnPreferenceChangeListener(
                 (p, v) -> check(inRange(str(v), 1, 86400), R.string.toast_bad_number));
+        findPreference(Prefs.APPS_PAUSE).setOnPreferenceChangeListener(
+                (p, v) -> check(inRange(str(v), 0, 60), R.string.toast_bad_number));
         findPreference(Prefs.LAUNCH_DELAY).setOnPreferenceChangeListener(
                 (p, v) -> check(inRange(str(v), 0, 600), R.string.toast_bad_number));
         findPreference(Prefs.OVERLAY).setOnPreferenceClickListener(p -> {
@@ -80,6 +84,10 @@ public class SettingsActivity extends PreferenceActivity
         findPreference(Prefs.AUTOSTART).setSummary(bootSummary(sp.getString(Prefs.LAST_BOOT, "")));
         findPreference(Prefs.LAUNCH_DELAY).setSummary(
                 sp.getString(Prefs.LAUNCH_DELAY, String.valueOf(Prefs.DEF_LAUNCH_DELAY)));
+        findPreference(Prefs.APPS_PAUSE).setSummary(
+                sp.getString(Prefs.APPS_PAUSE, String.valueOf(Prefs.DEF_APPS_PAUSE)));
+        MultiSelectListPreference multi = (MultiSelectListPreference) findPreference(Prefs.AUTOSTART_APPS);
+        multi.setSummary(appsSummary(multi, sp));
         ListPreference app = (ListPreference) findPreference(Prefs.LAUNCH_APP);
         CharSequence appName = app.getEntry();
         app.setSummary(appName == null || app.getValue() == null || app.getValue().length() == 0
@@ -94,24 +102,7 @@ public class SettingsActivity extends PreferenceActivity
     }
 
     private void populateApps(ListPreference lp) {
-        PackageManager pm = getPackageManager();
-        List<String[]> apps = new ArrayList<>();
-        Set<String> seen = new HashSet<>();
-        // обычные приложения (LAUNCHER) и экраны "домой" (HOME): штатный лаунчер, например Launcher3,
-        // в списке приложений не значится, у него только категория HOME
-        String[] categories = {Intent.CATEGORY_LAUNCHER, Intent.CATEGORY_HOME};
-        for (String category : categories) {
-            Intent main = new Intent(Intent.ACTION_MAIN);
-            main.addCategory(category);
-            for (ResolveInfo ri : pm.queryIntentActivities(main, 0)) {
-                String pkg = ri.activityInfo.packageName;
-                if (pkg.equals(getPackageName()) || !seen.add(pkg)) {
-                    continue;
-                }
-                apps.add(new String[]{String.valueOf(ri.loadLabel(pm)), pkg});
-            }
-        }
-        Collections.sort(apps, (a, b) -> a[0].compareToIgnoreCase(b[0]));
+        List<String[]> apps = AppUtil.listApps(this);
         CharSequence[] entries = new CharSequence[apps.size() + 1];
         CharSequence[] values = new CharSequence[apps.size() + 1];
         entries[0] = getString(R.string.not_set);
@@ -122,6 +113,48 @@ public class SettingsActivity extends PreferenceActivity
         }
         lp.setEntries(entries);
         lp.setEntryValues(values);
+    }
+
+    private void populateMulti(MultiSelectListPreference mp) {
+        List<String[]> apps = AppUtil.listApps(this);
+        CharSequence[] entries = new CharSequence[apps.size()];
+        CharSequence[] values = new CharSequence[apps.size()];
+        for (int i = 0; i < apps.size(); i++) {
+            entries[i] = apps.get(i)[0];
+            values[i] = apps.get(i)[1];
+        }
+        mp.setEntries(entries);
+        mp.setEntryValues(values);
+    }
+
+    private String appsSummary(MultiSelectListPreference mp, SharedPreferences sp) {
+        Set<String> selected = mp.getValues();
+        StringBuilder sb = new StringBuilder();
+        CharSequence[] entries = mp.getEntries();
+        CharSequence[] values = mp.getEntryValues();
+        if (selected != null && entries != null && values != null) {
+            for (int i = 0; i < values.length; i++) {
+                if (selected.contains(values[i].toString())) {
+                    if (sb.length() > 0) {
+                        sb.append(", ");
+                    }
+                    sb.append(entries[i]);
+                }
+            }
+        }
+        if (sb.length() == 0) {
+            return getString(R.string.not_set);
+        }
+        String[] last = sp.getString(Prefs.LAST_APPS, "").split("\\|", 3);
+        if (last.length == 3) {
+            try {
+                String when = DateFormat.getDateTimeInstance().format(new Date(Long.parseLong(last[0])));
+                sb.append("\n").append(getString(R.string.apps_last, when, last[1], last[2]));
+            } catch (RuntimeException ignored) {
+                // запись повреждена — не показываем
+            }
+        }
+        return sb.toString();
     }
 
     private void openOverlaySettings() {

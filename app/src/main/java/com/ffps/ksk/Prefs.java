@@ -14,11 +14,16 @@ final class Prefs {
     static final String PULL_REFRESH = "pull_refresh";
     static final String OVERLAY = "overlay";
     static final String LAUNCH_APP = "launch_app";
+    static final String AUTOSTART_APPS = "autostart_apps";
+    static final String APPS_PAUSE = "apps_pause";
+    static final String LAST_APPS = "last_apps_run";
+    static final String LAST_BOOT_ID = "last_boot_id";
 
     static final String DEF_SCHEDULE = "59 * * * *";
     static final int DEF_RETRY_COUNT = 0;
     static final int DEF_RETRY_PAUSE = 10;
     static final int DEF_LAUNCH_DELAY = 10;
+    static final int DEF_APPS_PAUSE = 1;
 
     private Prefs() {
     }

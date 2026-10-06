@@ -11,6 +11,8 @@ import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 
+import java.util.Set;
+
 public class BootReceiver extends BroadcastReceiver {
     static final String ACTION_LAUNCH = "com.ffps.ksk.LAUNCH";
 
@@ -30,7 +32,10 @@ public class BootReceiver extends BroadcastReceiver {
             result = context.getString(R.string.boot_res_off);
         } else {
             int delay = Math.max(0, Prefs.getInt(p, Prefs.LAUNCH_DELAY, Prefs.DEF_LAUNCH_DELAY));
-            if (delay == 0) {
+            Set<String> apps = p.getStringSet(Prefs.AUTOSTART_APPS, null);
+            boolean hasApps = apps != null && !apps.isEmpty();
+            // с автостартом приложений паузу перед открытием киоска отсчитывает сам киоск
+            if (delay == 0 || hasApps) {
                 result = launch(context);
             } else {
                 schedule(context, delay);

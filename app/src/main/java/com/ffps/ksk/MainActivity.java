@@ -23,6 +23,10 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 public class MainActivity extends Activity {
     private static final long TICK_MS = 10000;
 
@@ -52,6 +56,8 @@ public class MainActivity extends Activity {
     private boolean homeTracking; // свайп вверх в нижней половине -> другое приложение
 
     // состояние загрузки
+    private static boolean bootChecked; // проверка "первый запуск после загрузки" — раз за процесс
+    private boolean bootPending;
     private boolean started;
     private boolean autoOpenedSettings;
     private int attempt;
@@ -92,6 +98,13 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        if (!bootChecked) {
+            bootChecked = true;
+            if (Boot.isNewBoot(this, prefs)) {
+                Boot.mark(this, prefs);
+                bootPending = true;
+            }
+        }
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
                 | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
@@ -208,6 +221,11 @@ public class MainActivity extends Activity {
         handler.postDelayed(ticker, TICK_MS);
 
         hideSystemUi();
+
+        if (bootPending) {
+            bootPending = false;
+            startAppSequence();
+        }
     }
 
     @Override
@@ -357,19 +375,60 @@ public class MainActivity extends Activity {
     }
 
     private void launchOtherApp() {
-        Intent i = getPackageManager().getLaunchIntentForPackage(launchApp);
-        if (i == null) {
-            // у лаунчера нет категории LAUNCHER: открываем его экран "домой" напрямую
-            i = new Intent(Intent.ACTION_MAIN);
-            i.addCategory(Intent.CATEGORY_HOME);
-            i.setPackage(launchApp);
-        }
-        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
-            startActivity(i);
+            startActivity(AppUtil.launchIntent(getPackageManager(), launchApp));
         } catch (Exception ex) {
             Toast.makeText(this, R.string.app_not_found, Toast.LENGTH_SHORT).show();
         }
+    }
+
+    /**
+     * Автостарт приложений: после загрузки системы по очереди запускает выбранные приложения
+     * (пауза между ними), затем ждёт "Задержку запуска" от старта последнего и возвращает киоск на экран.
+     */
+    private void startAppSequence() {
+        Set<String> selected = prefs.getStringSet(Prefs.AUTOSTART_APPS, null);
+        if (selected == null || selected.isEmpty()) {
+            return;
+        }
+        final List<String> pkgs = new ArrayList<>();
+        for (String[] app : AppUtil.listApps(this)) { // по алфавиту названий
+            if (selected.contains(app[1])) {
+                pkgs.add(app[1]);
+            }
+        }
+        if (pkgs.isEmpty()) {
+            return;
+        }
+        final int pause = Math.max(0, Prefs.getInt(prefs, Prefs.APPS_PAUSE, Prefs.DEF_APPS_PAUSE));
+        final int delay = Math.max(0, Prefs.getInt(prefs, Prefs.LAUNCH_DELAY, Prefs.DEF_LAUNCH_DELAY));
+        final int[] state = {0, 0}; // индекс следующего приложения, число запущенных без ошибки
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (state[0] < pkgs.size()) {
+                    try {
+                        startActivity(AppUtil.launchIntent(getPackageManager(), pkgs.get(state[0])));
+                        state[1]++;
+                    } catch (Exception ignored) {
+                        // приложение удалено или не запускается — пропускаем
+                    }
+                    state[0]++;
+                    long wait = state[0] < pkgs.size() ? pause : delay;
+                    handler.postDelayed(this, wait * 1000L);
+                } else {
+                    prefs.edit().putString(Prefs.LAST_APPS,
+                            System.currentTimeMillis() + "|" + state[1] + "|" + pkgs.size()).commit();
+                    Intent back = new Intent(MainActivity.this, MainActivity.class);
+                    back.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                    try {
+                        startActivity(back);
+                    } catch (Exception ignored) {
+                        // на Android 10+ без разрешения "Поверх других окон" система может не пустить
+                    }
+                }
+            }
+        }, 1000);
     }
 
     private void openSettings() {
